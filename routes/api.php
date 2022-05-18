@@ -25,5 +25,11 @@ Route::get('user', [\App\Http\Controllers\UserController::class, 'index']);
 Route::post('register', [\App\Http\Controllers\Auth\UserAuthController::class, 'register']);
 Route::post('login', [\App\Http\Controllers\Auth\UserAuthController::class, 'login']);
 
-Route::get('tickets', [\App\Http\Controllers\API\TicketController::class,'index'])->middleware('auth:api');
-Route::get('projects', [\App\Http\Controllers\API\ProjectsAPIController::class,'index'])->middleware('auth:api');
+
+
+Route::middleware('auth:api')->group(function () {
+
+    Route::get('tickets', [\App\Http\Controllers\API\TicketController::class,'index']);
+    Route::get('projects', [\App\Http\Controllers\API\ProjectsAPIController::class,'index']);
+
+});
