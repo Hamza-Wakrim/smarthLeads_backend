@@ -10,31 +10,28 @@
 namespace App\Http\Controllers\API;
 
 
-use App\Criteria\Categories\CategoriesOfCuisinesCriteria;
-use App\Criteria\Categories\CategoriesOfRestaurantCriteria;
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Repositories\CategoryRepository;
+use App\Models\Projects;
+use App\Repositories\ProjectsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use InfyOm\Generator\Criteria\LimitOffsetCriteria;
 use Prettus\Repository\Criteria\RequestCriteria;
 use Prettus\Repository\Exceptions\RepositoryException;
-use Illuminate\Support\Facades\Redis;
 
 
 /**
  * Class CategoryController
  * @package App\Http\Controllers\API
  */
-class CategoryAPIController extends Controller
+class ProjectsAPIController extends Controller
 {
-    /** @var  CategoryRepository */
-    private $categoryRepository;
+    /** @var  ProjectsRepository */
+    private $projectsRepository;
 
-    public function __construct(CategoryRepository $categoryRepo)
+    public function __construct(ProjectsRepository $projectsRepo)
     {
-        $this->categoryRepository = $categoryRepo;
+        $this->projectsRepository = $projectsRepo;
     }
 
     /**
@@ -46,32 +43,30 @@ class CategoryAPIController extends Controller
      */
     public function index(Request $request)
     {
-        $cache_key = 'category_';
+//        $cache_key = 'category_';
         try {
-            $this->categoryRepository->pushCriteria(new RequestCriteria($request));
-            $this->categoryRepository->pushCriteria(new LimitOffsetCriteria($request));
-            $this->categoryRepository->pushCriteria(new CategoriesOfCuisinesCriteria($request));
-            $this->categoryRepository->pushCriteria(new CategoriesOfRestaurantCriteria($request));
+            $this->projectsRepository->pushCriteria(new RequestCriteria($request));
+            $this->projectsRepository->pushCriteria(new LimitOffsetCriteria($request));
+
 
         } catch (RepositoryException $e) {
             return $this->sendError($e->getMessage());
         }
 
-        Cache::forget($cache_key);
-        if (!Cache::has($cache_key)) {
-            $categories = Category::where('name', '=', 'Services')->with([
-                'childs.childs.childs',
-                'childs.childs.childs.childs.genericFood',
-            ])->get();
-            $categories->each(function ($c) {
-                $this->cleanCollection($c);
-            });
-            Cache::put($cache_key, $categories);
-        } else {
-            $categories = Cache::get($cache_key);
-        }
+        $projects = $this->projectsRepository->all();
 
-        return $this->sendResponse($categories, 'Categories retrieved successfully');
+//        Cache::forget($cache_key);
+//        if (!Cache::has($cache_key)) {
+//            $projects = Projects::get();
+//            $projects->each(function ($c) {
+//                $this->cleanCollection($c);
+//            });
+//            Cache::put($cache_key, $projects);
+//        } else {
+//            $projects = Cache::get($cache_key);
+//        }
+
+        return $this->sendResponse($projects, 'Projects retrieved successfully');
     }
 
 
@@ -85,42 +80,23 @@ class CategoryAPIController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $cache_key = 'category_' . $id;
-        /** @var Category $categories */
-        if (!empty($this->categoryRepository)) {
+//        $cache_key = 'project_' . $id;
+        /** @var Projects $projects */
+        if (!empty($this->projectsRepository)) {
             try {
-                $this->categoryRepository->pushCriteria(new RequestCriteria($request));
-                $this->categoryRepository->pushCriteria(new LimitOffsetCriteria($request));
-                $this->categoryRepository->pushCriteria(new CategoriesOfCuisinesCriteria($request));
-                $this->categoryRepository->pushCriteria(new CategoriesOfRestaurantCriteria($request));
+                $this->projectsRepository->pushCriteria(new RequestCriteria($request));
+                $this->projectsRepository->pushCriteria(new LimitOffsetCriteria($request));
             } catch (RepositoryException $e) {
                 return $this->sendError($e->getMessage());
             }
 
-//            $category = $this->categoryRepository->findWithoutFail($id);
-//            $category = $this->cleanCollection($category);
-
-            Cache::forget($cache_key);
-            if (!Cache::has($cache_key)) {
-                $category = Category::where('id', '=', $id)->with([
-                    'childs.childs.childs',
-                    'genericFood',
-                    'childs.genericFood',
-                    'childs.childs.genericFood',
-                ])->first();
-                $this->cleanCollection($category);
-                Cache::put($cache_key, $category);
-//                dd(['if ok', $this->d,$category->toArray()]);
-            } else {
-                $category = Cache::get($cache_key);
-//                dd(['if !ok', $category]);
-            }
+            $project = $this->projectsRepository->findWithoutFail($id);
         }
-        if (empty($category)) {
-            return $this->sendError('Category not found');
+        if (empty($project)) {
+            return $this->sendError('Project not found');
         }
 
-        return $this->sendResponse($category->toArray(), 'Category retrieved successfully');
+        return $this->sendResponse($project->toArray(), 'Project retrieved successfully');
     }
 
     /**
@@ -133,20 +109,13 @@ class CategoryAPIController extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
-        $customFields = $this->customFieldRepository->findByField('custom_field_model', $this->categoryRepository->model());
         try {
-            $category = $this->categoryRepository->create($input);
-            $category->customFieldsValues()->createMany(getCustomFieldsValues($customFields, $request));
-            if (isset($input['image']) && $input['image']) {
-                $cacheUpload = $this->uploadRepository->getByUuid($input['image']);
-                $mediaItem = $cacheUpload->getMedia('image')->first();
-                $mediaItem->copy($category, 'image');
-            }
+            $project = $this->projectsRepository->create($input);
         } catch (ValidatorException $e) {
             return $this->sendError($e->getMessage());
         }
 
-        return $this->sendResponse($category->toArray(), __('lang.saved_successfully', ['operator' => __('lang.category')]));
+        return $this->sendResponse($project->toArray(), __('lang.saved_successfully'));
     }
 
     /**
@@ -159,30 +128,20 @@ class CategoryAPIController extends Controller
      */
     public function update($id, Request $request)
     {
-        $category = $this->categoryRepository->findWithoutFail($id);
+        $project = $this->projectsRepository->findWithoutFail($id);
 
-        if (empty($category)) {
-            return $this->sendError('Category not found');
+        if (empty($project)) {
+            return $this->sendError('Project not found');
         }
         $input = $request->all();
-        $customFields = $this->customFieldRepository->findByField('custom_field_model', $this->categoryRepository->model());
         try {
-            $category = $this->categoryRepository->update($input, $id);
+            $project = $this->projectsRepository->update($input, $id);
 
-            if (isset($input['image']) && $input['image']) {
-                $cacheUpload = $this->uploadRepository->getByUuid($input['image']);
-                $mediaItem = $cacheUpload->getMedia('image')->first();
-                $mediaItem->copy($category, 'image');
-            }
-            foreach (getCustomFieldsValues($customFields, $request) as $value) {
-                $category->customFieldsValues()
-                    ->updateOrCreate(['custom_field_id' => $value['custom_field_id']], $value);
-            }
         } catch (ValidatorException $e) {
             return $this->sendError($e->getMessage());
         }
 
-        return $this->sendResponse($category->toArray(), __('lang.updated_successfully', ['operator' => __('lang.category')]));
+        return $this->sendResponse($project->toArray(), __('lang.updated_successfully'));
 
     }
 
@@ -195,15 +154,15 @@ class CategoryAPIController extends Controller
      */
     public function destroy($id)
     {
-        $category = $this->categoryRepository->findWithoutFail($id);
+        $project = $this->projectsRepository->findWithoutFail($id);
 
-        if (empty($category)) {
-            return $this->sendError('Category not found');
+        if (empty($project)) {
+            return $this->sendError('Project not found');
         }
 
-        $category = $this->categoryRepository->delete($id);
+        $project = $this->projectsRepository->delete($id);
 
-        return $this->sendResponse($category, __('lang.deleted_successfully', ['operator' => __('lang.category')]));
+        return $this->sendResponse($project, __('lang.deleted_successfully'));
     }
 
 }
