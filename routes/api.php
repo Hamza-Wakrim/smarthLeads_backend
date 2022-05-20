@@ -30,6 +30,6 @@ Route::post('login', [\App\Http\Controllers\Auth\UserAuthController::class, 'log
 Route::middleware('auth:api')->group(function () {
 
     Route::get('tickets', [\App\Http\Controllers\API\TicketController::class,'index']);
-    Route::get('projects', [\App\Http\Controllers\API\ProjectsAPIController::class,'index']);
+    Route::resource('projects',\App\Http\Controllers\API\ProjectsAPIController::class);
 
 });

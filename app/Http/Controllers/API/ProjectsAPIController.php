@@ -12,6 +12,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Projects;
+use App\Models\UserProjects;
 use App\Repositories\ProjectsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -111,6 +112,13 @@ class ProjectsAPIController extends Controller
         $input = $request->all();
         try {
             $project = $this->projectsRepository->create($input);
+
+            $client_project = new UserProjects();
+            $client_project->user_id = $input['user_id'];
+            $client_project->project_id = $project->id;
+            $client_project->save();
+
+
         } catch (ValidatorException $e) {
             return $this->sendError($e->getMessage());
         }
