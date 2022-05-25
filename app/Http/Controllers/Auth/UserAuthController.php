@@ -33,7 +33,7 @@ class UserAuthController extends Controller
         ]);
 
         if (!auth()->attempt($data)) {
-            return response(['error_message' => 'Incorrect Details. Try again']);
+            return response(['error_message' => 'Incorrect Details. Try again'],422);
         }
 
         $user = auth()->user();
