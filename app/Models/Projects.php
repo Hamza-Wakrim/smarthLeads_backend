@@ -17,6 +17,8 @@ class Projects extends Model
         'start_date',
         'end_date',
         'priority',
+        'cost',
+        'rate',
         'image',
     ];
 
@@ -24,5 +26,10 @@ class Projects extends Model
     public function user()
     {
         return $this->belongsToMany(UserProjects::class, 'user_projects', 'project_id', 'user_id');
+    }
+
+    public function tasks()
+    {
+        return $this->belongsToMany(Project_tasks::class, 'user_projects', 'project_id', 'tasks_id');
     }
 }

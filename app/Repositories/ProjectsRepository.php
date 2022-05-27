@@ -25,6 +25,8 @@ class ProjectsRepository extends BaseRepository
         'start_date',
         'end_date',
         'priority',
+        'rate',
+        'cost',
         'image',
     ];
 

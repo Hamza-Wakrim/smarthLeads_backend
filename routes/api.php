@@ -24,12 +24,12 @@ Route::get('user', [\App\Http\Controllers\UserController::class, 'index']);
 
 Route::post('register', [\App\Http\Controllers\Auth\UserAuthController::class, 'register']);
 Route::post('login', [\App\Http\Controllers\Auth\UserAuthController::class, 'login']);
+Route::resource('projects',\App\Http\Controllers\API\ProjectsAPIController::class);
 
 
 
 Route::middleware('auth:api')->group(function () {
 
     Route::get('tickets', [\App\Http\Controllers\API\TicketController::class,'index']);
-    Route::resource('projects',\App\Http\Controllers\API\ProjectsAPIController::class);
 
 });

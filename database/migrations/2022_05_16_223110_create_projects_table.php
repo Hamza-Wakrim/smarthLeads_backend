@@ -21,6 +21,7 @@ return new class extends Migration
             $table->dateTime('end_date')->nullable();
             $table->string('priority')->nullable();
             $table->string('rate')->nullable();
+            $table->string('cost')->nullable();
             $table->string('image')->nullable();
             $table->timestamps();
         });

@@ -11,9 +11,12 @@ namespace App\Http\Controllers\API;
 
 
 use App\Http\Controllers\Controller;
+use App\Models\Project_tasks;
 use App\Models\Projects;
+use App\Models\Tasks;
 use App\Models\UserProjects;
 use App\Repositories\ProjectsRepository;
+use App\Repositories\TasksRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use InfyOm\Generator\Criteria\LimitOffsetCriteria;
@@ -25,14 +28,14 @@ use Prettus\Repository\Exceptions\RepositoryException;
  * Class CategoryController
  * @package App\Http\Controllers\API
  */
-class ProjectsAPIController extends Controller
+class TasksAPIController extends Controller
 {
-    /** @var  ProjectsRepository */
-    private $projectsRepository;
+    /** @var  TasksRepository */
+    private $tasksRepository;
 
-    public function __construct(ProjectsRepository $projectsRepo)
+    public function __construct(TasksRepository $tasksRepo)
     {
-        $this->projectsRepository = $projectsRepo;
+        $this->tasksRepository = $tasksRepo;
     }
 
     /**
@@ -46,15 +49,15 @@ class ProjectsAPIController extends Controller
     {
 //        $cache_key = 'category_';
         try {
-            $this->projectsRepository->pushCriteria(new RequestCriteria($request));
-            $this->projectsRepository->pushCriteria(new LimitOffsetCriteria($request));
+            $this->tasksRepository->pushCriteria(new RequestCriteria($request));
+            $this->tasksRepository->pushCriteria(new LimitOffsetCriteria($request));
 
 
         } catch (RepositoryException $e) {
             return $this->sendError($e->getMessage());
         }
 
-        $projects = $this->projectsRepository->all();
+        $tasks = $this->tasksRepository->all();
 
 //        Cache::forget($cache_key);
 //        if (!Cache::has($cache_key)) {
@@ -67,7 +70,7 @@ class ProjectsAPIController extends Controller
 //            $projects = Cache::get($cache_key);
 //        }
 
-        return $this->sendResponse($projects, 'Projects retrieved successfully');
+        return $this->sendResponse($tasks, 'Tasks retrieved successfully');
     }
 
 
@@ -82,22 +85,22 @@ class ProjectsAPIController extends Controller
     public function show(Request $request, $id)
     {
 //        $cache_key = 'project_' . $id;
-        /** @var Projects $projects */
-        if (!empty($this->projectsRepository)) {
+        /** @var Tasks $task */
+        if (!empty($this->tasksRepository)) {
             try {
-                $this->projectsRepository->pushCriteria(new RequestCriteria($request));
-                $this->projectsRepository->pushCriteria(new LimitOffsetCriteria($request));
+                $this->tasksRepository->pushCriteria(new RequestCriteria($request));
+                $this->tasksRepository->pushCriteria(new LimitOffsetCriteria($request));
             } catch (RepositoryException $e) {
                 return $this->sendError($e->getMessage());
             }
 
-            $project = $this->projectsRepository->findWithoutFail($id);
+            $task = $this->tasksRepository->findWithoutFail($id);
         }
-        if (empty($project)) {
-            return $this->sendError('Project not found');
+        if (empty($task)) {
+            return $this->sendError('Task not found');
         }
 
-        return $this->sendResponse($project->toArray(), 'Project retrieved successfully');
+        return $this->sendResponse($task->toArray(), 'Task retrieved successfully');
     }
 
     /**
@@ -111,19 +114,14 @@ class ProjectsAPIController extends Controller
     {
         $input = $request->all();
         try {
-            $project = $this->projectsRepository->create([
-                'name' => $input['name'],
-                'description' => $input['description'],
-                'start_date' => $input['start_date'],
-                'end_date' => $input['end_date'],
-                'priority' => $input['priority'],
-                'cost' => $input['cost'],
-                'rate' => $input['rate'],
+            $task = $this->tasksRepository->create([
+                'title' => $input['title'],
+                'status' => $input['status'],
             ]);
 
-            $client_project = new UserProjects();
-            $client_project->user_id = $input['user_id'] ?? null;
-            $client_project->project_id = $project->id;
+            $client_project = new Project_tasks();
+            $client_project->project_id = $input['project_id'] ?? null;
+            $client_project->tasks_id = $task->id;
             $client_project->save();
 
 
@@ -131,7 +129,7 @@ class ProjectsAPIController extends Controller
             return $this->sendError($e->getMessage());
         }
 
-        return $this->sendResponse($project->toArray(), __('lang.saved_successfully'));
+        return $this->sendResponse($task->toArray(), __('lang.saved_successfully'));
     }
 
     /**
@@ -144,20 +142,20 @@ class ProjectsAPIController extends Controller
      */
     public function update($id, Request $request)
     {
-        $project = $this->projectsRepository->findWithoutFail($id);
+        $task = $this->tasksRepository->findWithoutFail($id);
 
-        if (empty($project)) {
-            return $this->sendError('Project not found');
+        if (empty($task)) {
+            return $this->sendError('Task not found');
         }
         $input = $request->all();
         try {
-            $project = $this->projectsRepository->update($input, $id);
+            $task = $this->tasksRepository->update($input, $id);
 
         } catch (ValidatorException $e) {
             return $this->sendError($e->getMessage());
         }
 
-        return $this->sendResponse($project->toArray(), __('lang.updated_successfully'));
+        return $this->sendResponse($task->toArray(), __('lang.updated_successfully'));
 
     }
 
@@ -170,15 +168,15 @@ class ProjectsAPIController extends Controller
      */
     public function destroy($id)
     {
-        $project = $this->projectsRepository->findWithoutFail($id);
+        $task = $this->tasksRepository->findWithoutFail($id);
 
-        if (empty($project)) {
-            return $this->sendError('Project not found');
+        if (empty($task)) {
+            return $this->sendError('Task not found');
         }
 
-        $project = $this->projectsRepository->delete($id);
+        $task = $this->tasksRepository->delete($id);
 
-        return $this->sendResponse($project, __('lang.deleted_successfully'));
+        return $this->sendResponse($task, __('lang.deleted_successfully'));
     }
 
 }
