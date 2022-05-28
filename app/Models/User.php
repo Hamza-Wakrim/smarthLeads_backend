@@ -52,4 +52,14 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(UserProjects::class, 'user_projects', 'user_id', 'project_id');
     }
+
+    public function contacts()
+    {
+        return $this->hasMany(Contacts::class, 'user_id', 'id');
+    }
+
+    public function invoices(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Invoices::class,'user_id','id');
+    }
 }
